@@ -1040,12 +1040,25 @@
       loadStats();
     });
 
+    function triggerSound(soundName) {
+      if (appState.muted) return;
+      try {
+        pywebview.api.play_sound(soundName);
+      } catch (e) {
+        console.warn("Could not play sound: " + soundName, e);
+      }
+    }
+
     async function loadStats() {
       try {
         const stats = await pywebview.api.get_stats();
         document.getElementById('stat-streak').innerText = stats.current_streak + ' sessions';
         document.getElementById('stat-today').innerText = formatMinutes(stats.today_focus_mins);
         document.getElementById('stat-total').innerText = formatMinutes(stats.total_focus_mins);
+        
+        // Sync mute status from JSON config
+        appState.muted = stats.muted || false;
+        updateMuteUI();
       } catch (e) {
         console.error("Pywebview API fails to connect", e);
       }
@@ -1064,22 +1077,24 @@
       return `${m}:${s}`;
     }
 
-    function triggerBeep() {
-      if (appState.muted) return;
+    async function toggleMute() {
+      appState.muted = !appState.muted;
+      updateMuteUI();
       try {
-        pywebview.api.play_beep();
+        await pywebview.api.set_mute_state(appState.muted);
       } catch (e) {
-        console.warn(e);
+        console.error(e);
       }
     }
 
-    function toggleMute() {
-      appState.muted = !appState.muted;
+    function updateMuteUI() {
       const icon = document.getElementById('speaker-icon');
-      if (appState.muted) {
-        icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
-      } else {
-        icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
+      if (icon) {
+        if (appState.muted) {
+          icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
+        } else {
+          icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
+        }
       }
     }
 
@@ -1106,7 +1121,7 @@
 
         if (fixationTimeLeft <= 0) {
           clearInterval(timerInterval);
-          triggerBeep();
+          triggerSound('chime_soft');
           advanceFromFixation();
         }
       }, 1000);
@@ -1142,6 +1157,7 @@
         document.getElementById('b-counter').innerText = breathTimeLeft;
 
         if (breathTimeLeft <= 0) {
+          triggerSound('chime_breath');
           if (breathPhase === 'inhale') {
             breathPhase = 'exhale';
             breathTimeLeft = appState.breathInhaleOuthaleSec;
@@ -1151,7 +1167,7 @@
             document.querySelectorAll('.cycle-dot')[currentBreathCycle - 1].classList.add('completed');
             if (currentBreathCycle >= appState.breathCyclesCount) {
               clearInterval(timerInterval);
-              triggerBeep();
+              triggerSound('chime_soft'); // transition sound
               startFocusPhase();
               return;
             }
@@ -1202,7 +1218,7 @@
 
         if (focusTimeLeft <= 0) {
           clearInterval(timerInterval);
-          triggerBeep();
+          triggerSound('chime_complete');
           completeFocusSession();
         }
       }, 1000);
@@ -1231,13 +1247,13 @@
 
     function finishEarly() {
       clearInterval(timerInterval);
-      triggerBeep();
+      triggerSound('chime_complete');
       completeFocusSession();
     }
 
     function skipPhase() {
       clearInterval(timerInterval);
-      triggerBeep();
+      triggerSound('chime_soft');
       if (currentScreen === 'screen-fixate') {
         advanceFromFixation();
       } else if (currentScreen === 'screen-breathing') {
