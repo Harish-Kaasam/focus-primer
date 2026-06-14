@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Primer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #020B18;
+      --bg-secondary: #081223;
+      --bg-elevated: #0E1D35;
+      --primary-blue: #4A90E2;
+      --primary-hover: #5DA2F5;
+      --primary-glow: #8CC8FF;
+      --breathing-teal: #5FD1A5;
+      --warm-accent: #FFB86B;
+      --danger: #FF6B6B;
+      --text-primary: #F5FAFF;
+      --text-secondary: #A8B7D1;
+      --text-muted: #71819E;
+      --glass-bg: rgba(255, 255, 255, 0.06);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --glass-highlight: rgba(255, 255, 255, 0.20);
+      --font-family: "Segoe UI Variable", "Inter", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-family);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 16:9 Canvas ratio frame */
+    .app-frame {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Background mountains */
+    .mountains {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 180px;
+      z-index: 1;
+      opacity: 0.25;
+      pointer-events: none;
+      color: var(--bg-elevated);
+    }
+
+    /* Fixed Top Logo & Nav */
+    .header {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-mark {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--primary-blue);
+      box-shadow: 0 0 10px var(--primary-blue);
+    }
+    .logo-text {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+
+    .esc-badge {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      z-index: 10;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      cursor: pointer;
+      backdrop-filter: blur(16px);
+      transition: all 0.2s;
+    }
+    .esc-badge:hover {
+      background: var(--glass-highlight);
+      color: var(--text-primary);
+    }
+
+    /* Glass Cards */
+    .glass-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .screen-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.30s ease, visibility 0.30s ease;
+      z-index: 2;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .screen.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Centered Max-Width constraints for viewport scaling */
+    .screen-content-wrapper {
+      width: 100%;
+      max-width: clamp(900px, 80vw, 1100px);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+
+    /* SCREEN 1: Setup Layout */
+    #screen-setup-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      width: 100%;
+      gap: clamp(40px, 6vw, 80px);
+      align-items: center;
+    }
+
+    .setup-left-side {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .setup-right-side {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      width: 100%;
+      gap: 28px;
+    }
+
+    .setup-title {
+      font-size: clamp(40px, 5vw, 56px);
+      font-weight: 700;
+      letter-spacing: -1.5px;
+      color: var(--text-primary);
+    }
+    .setup-tagline {
+      font-size: clamp(14px, 2vw, 18px);
+      color: var(--primary-glow);
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+    }
+
+    .settings-panel {
+      padding: clamp(20px, 2.5vw, 32px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(16px, 2vw, 24px);
+      width: 100%;
+    }
+
+    .panel-header-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .control-val {
+      color: var(--primary-glow);
+    }
+
+    /* Interactive Sliders styling */
+    .slider-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .slider-limit-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      width: 16px;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--glass-border);
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--primary-blue);
+      border: 2px solid var(--text-primary);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--primary-glow);
+      transition: transform 0.2s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    /* Toggle Switches styling */
+    .toggle-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .toggle-text-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .toggle-subtext {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 22px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider-round {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: var(--glass-border);
+      border-radius: 34px;
+      transition: 0.3s;
+    }
+    .slider-round:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+    input:checked + .slider-round {
+      background-color: var(--primary-blue);
+    }
+    input:checked + .slider-round:before {
+      transform: translateX(20px);
+    }
+
+    .conditional-fields {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(16px, 2vw, 24px);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+      opacity: 0;
+    }
+    .conditional-fields.visible {
+      max-height: 220px;
+      opacity: 1;
+    }
+
+    .lotus-orb-container {
+      position: relative;
+      width: clamp(150px, 20vw, 180px);
+      height: clamp(150px, 20vw, 180px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(74, 144, 226, 0.4) 0%, transparent 70%);
+      box-shadow: 0 0 40px rgba(74,144,226,0.15), inset 0 0 20px rgba(74,144,226,0.1);
+      animation: setupOrbPulse 3s ease-in-out infinite alternate;
+    }
+    .lotus-icon {
+      width: clamp(60px, 8vw, 80px);
+      height: clamp(60px, 8vw, 80px);
+      filter: drop-shadow(0 0 12px rgba(140,200,255,0.8)) 
+              drop-shadow(0 0 24px rgba(74,144,226,0.5));
+    }
+
+    @keyframes setupOrbPulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.03); }
+    }
+
+    .btn-begin {
+      background: var(--primary-blue);
+      color: var(--text-primary);
+      border: none;
+      border-radius: 12px;
+      padding: clamp(12px, 1.8vw, 16px);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.2s;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+    .btn-begin:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .tip-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--text-muted);
+      z-index: 5;
+    }
+
+    /* Screen-specific centered layout panels */
+    .centered-viewport {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      gap: clamp(24px, 4vw, 36px);
+    }
+
+    .screen-header-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .screen-header-block h2 {
+      font-size: clamp(20px, 2.5vw, 24px);
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+    .screen-header-block p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .primary-timer-large {
+      font-size: clamp(64px, 9vw, 96px);
+      font-weight: 700;
+      color: var(--primary-blue);
+      text-shadow: 0 0 20px rgba(74, 144, 226, 0.6);
+      font-family: monospace;
+      line-height: 1;
+    }
+    .timer-caption {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .action-button-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    /* Screen 2: Fixation concentric visuals */
+    .fixation-ring-canvas {
+      position: relative;
+      width: clamp(220px, 25vw, 320px);
+      height: clamp(220px, 25vw, 320px);
+    }
+    .fixation-outer-rotating {
+      position: absolute;
+      inset: 0;
+      border: 1px dotted rgba(168, 183, 209, 0.15);
+      border-radius: 50%;
+      animation: rotateCanvas 60s linear infinite;
+    }
+    .fixation-dot-marker {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--text-secondary);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .fixation-dot-marker.top { top: 0; left: 50%; }
+    .fixation-dot-marker.right { top: 50%; right: 0; transform: translate(50%, -50%); }
+    .fixation-dot-marker.bottom { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+    .fixation-dot-marker.left { top: 50%; left: 0; transform: translate(-50%, -50%); }
+
+    .fixation-particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: var(--text-secondary);
+      border-radius: 50%;
+      opacity: 0.15;
+    }
+
+    .fixation-center-glow-point {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: clamp(14px, 2vw, 20px);
+      height: clamp(14px, 2vw, 20px);
+      background: white;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 20px rgba(74, 144, 226, 0.8), 0 0 40px rgba(74, 144, 226, 0.6), 0 0 80px rgba(74, 144, 226, 0.4);
+      animation: centerPointPulse 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes rotateCanvas {
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes centerPointPulse {
+      0% { transform: translate(-50%, -50%) scale(0.9); }
+      100% { transform: translate(-50%, -50%) scale(1.15); }
+    }
+
+    /* Screen 3: Breathing layout */
+    .breath-flex-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(30px, 5vw, 60px);
+      width: 100%;
+    }
+
+    .breath-side-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--breathing-teal);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      width: 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .breath-side-label span {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .breathing-pulsing-orb {
+      width: clamp(180px, 20vw, 240px);
+      height: clamp(180px, 20vw, 240px);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(95, 209, 165, 0.45) 0%, rgba(95, 209, 165, 0.05) 100%);
+      border: 1px solid rgba(95, 209, 165, 0.35);
+      box-shadow: 0 0 40px rgba(95, 209, 165, 0.25);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: transform 4s ease-in-out;
+    }
+    .orb-inner-title {
+      font-size: clamp(14px, 1.8vw, 18px);
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--text-primary);
+    }
+    .orb-inner-counter {
+      font-size: clamp(40px, 5vw, 64px);
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 4px;
+    }
+
+    .cycles-dot-bar {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .cycle-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--glass-border);
+      transition: all 0.3s;
+    }
+    .cycle-dot.completed {
+      background: var(--breathing-teal);
+      box-shadow: 0 0 8px var(--breathing-teal);
+    }
+    .cycle-dot.active {
+      background: var(--text-primary);
+      box-shadow: 0 0 10px var(--text-primary);
+      transform: scale(1.2);
+    }
+
+    /* Screen 4: Focus details */
+    .focus-timer-ring-area {
+      position: relative;
+      width: clamp(200px, 22vw, 260px);
+      height: clamp(200px, 22vw, 260px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .focus-ring-overlay-text {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .focus-ring-overlay-text .timer-digits {
+      font-size: clamp(40px, 5vw, 56px);
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: monospace;
+      line-height: 1;
+    }
+
+    .focus-progress-foreground {
+      filter: drop-shadow(0 0 10px var(--primary-glow));
+    }
+
+    .stats-container-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 680px;
+      margin-top: 10px;
+    }
+
+    .telemetry-card {
+      padding: clamp(12px, 1.5vw, 16px);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-align: left;
+    }
+    .telemetry-card .icon-panel {
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .telemetry-card .label-block {
+      display: flex;
+      flex-direction: column;
+    }
+    .telemetry-card .label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .telemetry-card .value {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 2px;
+    }
+
+    /* Generic buttons */
+    .btn-pill-glass {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 12px 24px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-pill-glass:hover {
+      background: var(--glass-highlight);
+      color: var(--text-primary);
+    }
+
+    .btn-pill-danger {
+      background: var(--danger);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color 0.2s;
+    }
+    .btn-pill-danger:hover {
+      background: #e05c5c;
+    }
+
+    /* Lower Utilities bar */
+    .bottom-utilities-layer {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+    .circular-icon-button {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      backdrop-filter: blur(16px);
+      transition: all 0.2s;
+    }
+    .circular-icon-button:hover {
+      background: var(--glass-highlight);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-frame">
+    <!-- Background mountain ridge -->
+    <svg class="mountains" viewBox="0 0 1440 320" preserveAspectRatio="none">
+      <path fill="currentColor" d="M0,288L120,266.7C240,245,480,203,720,213.3C960,224,1200,288,1320,320L1440,352L1440,320L1320,320C1200,320,960,320,720,320C480,320,240,320,120,320L0,320Z"></path>
+    </svg>
+
+    <!-- Logo top left -->
+    <div class="header">
+      <div class="logo-mark"></div>
+      <div class="logo-text">Focus Primer</div>
+    </div>
+    <div class="esc-badge" id="esc-btn" onclick="stopSession()">ESC</div>
+
+    <!-- Active screen layout views -->
+    <div class="screen-container">
+
+      <!-- SCREEN 1: Setup -->
+      <div class="screen active" id="screen-setup">
+        <div class="screen-content-wrapper">
+          <div id="screen-setup-grid">
+            <div class="setup-left-side">
+              <div class="settings-panel glass-card">
+                <div class="panel-header-title">Session Settings</div>
+                
+                <div class="control-group">
+                  <div class="control-label">
+                    <span>Fixation duration</span>
+                    <span class="control-val" id="lbl-fixation">45 sec</span>
+                  </div>
+                  <div class="slider-container">
+                    <span class="slider-limit-label">15</span>
+                    <input type="range" id="val-fixation" min="15" max="60" value="45" oninput="updateLabel('fixation', this.value + ' sec')">
+                    <span class="slider-limit-label">60</span>
+                  </div>
+                </div>
+
+                <div class="control-group">
+                  <div class="control-label">
+                    <span>Focus duration</span>
+                    <span class="control-val" id="lbl-focus">25 min</span>
+                  </div>
+                  <div class="slider-container">
+                    <span class="slider-limit-label">5</span>
+                    <input type="range" id="val-focus" min="5" max="60" value="25" oninput="updateLabel('focus', this.value + ' min')">
+                    <span class="slider-limit-label">60</span>
+                  </div>
+                </div>
+
+                <div class="toggle-container">
+                  <div class="toggle-text-group">
+                    <span class="control-label">Include Ujjayi breathing</span>
+                    <span class="toggle-subtext">Breath cycles before focus</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="val-breathing" checked onchange="toggleBreathingFields(this.checked)">
+                    <span class="slider-round"></span>
+                  </label>
+                </div>
+
+                <div class="conditional-fields visible" id="breathing-fields">
+                  <div class="control-group">
+                    <div class="control-label">
+                      <span>Inhale / exhale</span>
+                      <span class="control-val" id="lbl-inhale">4 sec</span>
+                    </div>
+                    <div class="slider-container">
+                      <span class="slider-limit-label">2</span>
+                      <input type="range" id="val-inhale" min="2" max="8" value="4" oninput="updateLabel('inhale', this.value + ' sec')">
+                      <span class="slider-limit-label">8</span>
+                    </div>
+                  </div>
+                  <div class="control-group">
+                    <div class="control-label">
+                      <span>Breath cycles</span>
+                      <span class="control-val" id="lbl-cycles">6 cycles</span>
+                    </div>
+                    <div class="slider-container">
+                      <span class="slider-limit-label">1</span>
+                      <input type="range" id="val-cycles" min="1" max="12" value="6" oninput="updateLabel('cycles', this.value + ' cycles')">
+                      <span class="slider-limit-label">12</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="setup-right-side">
+              <div class="setup-title">FOCUS PRIMER</div>
+              <div class="setup-tagline">Prepare • Breathe • Focus</div>
+              
+              <div class="lotus-orb-container">
+                <svg class="lotus-icon" width="80" height="80" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <g stroke="#8CC8FF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                    <path d="M128 52C112 78 108 104 128 132C148 104 144 78 128 52Z"/>
+                    <path d="M96 76C74 92 68 116 92 138C112 124 116 98 96 76Z"/>
+                    <path d="M160 76C182 92 188 116 164 138C144 124 140 98 160 76Z"/>
+                    <path d="M58 106C38 128 40 156 72 172C96 152 94 126 58 106Z"/>
+                    <path d="M198 106C218 128 216 156 184 172C160 152 162 126 198 106Z"/>
+                    <path d="M82 156C64 176 68 198 102 206C118 186 114 170 82 156Z"/>
+                    <path d="M174 156C192 176 188 198 154 206C138 186 142 170 174 156Z"/>
+                    <path d="M128 150C102 176 102 202 128 218C154 202 154 176 128 150Z"/>
+                  </g>
+                </svg>
+              </div>
+
+              <button class="btn-begin" onclick="beginSession()">Begin Session</button>
+              
+              <div class="tip-bar">
+                <span>📍</span>
+                <span>Tip: Fixate on the dot, or a real mark on the wall.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 2: Fixation Mode -->
+      <div class="screen" id="screen-fixate">
+        <div class="screen-content-wrapper">
+          <div class="centered-viewport">
+            <div class="screen-header-block">
+              <h2>FIXATE</h2>
+              <p>Keep your gaze on the moving dot</p>
+            </div>
+
+            <div class="center-visual-area">
+              <div class="fixation-ring-canvas">
+                <div class="fixation-outer-rotating">
+                  <div class="fixation-dot-marker top"></div>
+                  <div class="fixation-dot-marker right"></div>
+                  <div class="fixation-dot-marker bottom"></div>
+                  <div class="fixation-dot-marker left"></div>
+                </div>
+                <div class="fixation-particle" style="top:25%; left:20%;"></div>
+                <div class="fixation-particle" style="top:75%; left:28%;"></div>
+                <div class="fixation-particle" style="top:35%; right:22%;"></div>
+                <div class="fixation-particle" style="top:80%; right:18%;"></div>
+                <div class="fixation-center-glow-point"></div>
+              </div>
+            </div>
+
+            <div class="screen-header-block">
+              <div class="primary-timer-large" id="fixate-timer">00:45</div>
+              <div class="timer-caption">remaining</div>
+            </div>
+
+            <div class="action-button-row">
+              <button class="btn-pill-glass" onclick="skipPhase()">
+                <span>▶▶</span> Skip Phase
+              </button>
+              <button class="btn-pill-danger" onclick="stopSession()">
+                <span>■</span> Stop
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 3: Ujjayi Breathing -->
+      <div class="screen" id="screen-breathing">
+        <div class="screen-content-wrapper">
+          <div class="centered-viewport">
+            <div class="screen-header-block">
+              <h2>UJJAYI BREATH</h2>
+              <p>Nose-breath with a soft ocean sound</p>
+            </div>
+
+            <div class="center-visual-area">
+              <div class="breath-flex-wrapper">
+                <div class="breath-side-label" style="text-align: right;">
+                  Inhale ↑ <span style="text-align: right;">Nose in</span>
+                </div>
+                
+                <div class="breathing-pulsing-orb" id="b-orb">
+                  <div class="orb-inner-title" id="b-status">INHALE</div>
+                  <div class="orb-inner-counter" id="b-counter">4</div>
+                </div>
+
+                <div class="breath-side-label" style="text-align: left;">
+                  Exhale ↓ <span style="text-align: left;">Nose out</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="screen-header-block">
+              <div class="cycles-dot-bar" id="dots-container"></div>
+              <div class="timer-caption" id="cycle-txt" style="margin-top: 12px;">Cycle 1 of 6</div>
+            </div>
+
+            <div class="action-button-row">
+              <button class="btn-pill-glass" onclick="skipPhase()">
+                <span>▶▶</span> Skip Phase
+              </button>
+              <button class="btn-pill-danger" onclick="stopSession()">
+                <span>■</span> Stop
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 4: Focus Timer -->
+      <div class="screen" id="screen-focus">
+        <div class="screen-content-wrapper">
+          <div class="centered-viewport">
+            <div class="screen-header-block">
+              <h2>FOCUS</h2>
+              <p>Stay with your work</p>
+            </div>
+
+            <div class="center-visual-area">
+              <div class="focus-timer-ring-area">
+                <svg width="260" height="260">
+                  <circle cx="130" cy="130" r="116" stroke="var(--glass-border)" stroke-width="8" fill="transparent"/>
+                  <circle id="focus-progress-bar" class="focus-progress-foreground" cx="130" cy="130" r="116" stroke="var(--primary-blue)" stroke-width="8" fill="transparent"
+                          stroke-dasharray="728.84" stroke-dashoffset="0" stroke-linecap="round" style="transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 1s linear;"/>
+                </svg>
+                <div class="focus-ring-overlay-text">
+                  <div class="timer-digits" id="focus-timer">25:00</div>
+                  <div class="timer-caption">remaining</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stats-container-row">
+              <div class="telemetry-card glass-card">
+                <div class="icon-panel" style="color: var(--warm-accent);">🔥</div>
+                <div class="label-block">
+                  <span class="label">Current Streak</span>
+                  <span class="value" id="stat-streak">0 sessions</span>
+                </div>
+              </div>
+              <div class="telemetry-card glass-card">
+                <div class="icon-panel" style="color: var(--primary-glow);">🕒</div>
+                <div class="label-block">
+                  <span class="label">Today's Focus</span>
+                  <span class="value" id="stat-today">0m</span>
+                </div>
+              </div>
+              <div class="telemetry-card glass-card">
+                <div class="icon-panel" style="color: var(--success);">📊</div>
+                <div class="label-block">
+                  <span class="label">Total Focus</span>
+                  <span class="value" id="stat-total">0m</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="action-button-row">
+              <button class="btn-pill-glass" onclick="finishEarly()" style="color: var(--primary-glow); border-color: rgba(74, 144, 226, 0.35);">
+                Finish Early
+              </button>
+              <button class="btn-pill-danger" onclick="stopSession()">
+                <span>■</span> Stop
+              </button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom utility controls bar -->
+    <div class="bottom-utilities-layer">
+      <div class="circular-icon-button" id="mute-btn" onclick="toggleMute()">
+        <!-- Speaker Icon -->
+        <svg id="speaker-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+      </div>
+      <div class="circular-icon-button" id="settings-btn" style="display:none;">⚙️</div>
+    </div>
+  </div>
+
+  <script>
+    let currentScreen = 'screen-setup';
+    let appState = {
+      fixationSec: 45,
+      focusMin: 25,
+      includeBreathing: true,
+      breathInhaleOuthaleSec: 4,
+      breathCyclesCount: 6,
+      muted: false
+    };
+
+    let timerInterval = null;
+    let fixationTimeLeft = 0;
+    let focusTimeLeft = 0;
+    let breathTimeLeft = 0;
+    let currentBreathCycle = 1;
+    let breathPhase = 'inhale'; // inhale, exhale
+
+    // Sync Slider Labels
+    function updateLabel(id, val) {
+      document.getElementById('lbl-' + id).innerText = val;
+    }
+
+    function toggleBreathingFields(visible) {
+      const f = document.getElementById('breathing-fields');
+      if (visible) {
+        f.classList.add('visible');
+      } else {
+        f.classList.remove('visible');
+      }
+    }
+
+    function changeScreen(targetId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(targetId).classList.add('active');
+      currentScreen = targetId;
+
+      // Handle logo & badge states
+      if (targetId === 'screen-setup') {
+        document.getElementById('esc-btn').style.display = 'none';
+        document.getElementById('settings-btn').style.display = 'none';
+      } else {
+        document.getElementById('esc-btn').style.display = 'block';
+        if (targetId === 'screen-focus') {
+          document.getElementById('settings-btn').style.display = 'flex';
+        } else {
+          document.getElementById('settings-btn').style.display = 'none';
+        }
+      }
+    }
+
+    // Load local stats
+    window.addEventListener('pywebviewready', () => {
+      loadStats();
+    });
+
+    async function loadStats() {
+      try {
+        const stats = await pywebview.api.get_stats();
+        document.getElementById('stat-streak').innerText = stats.current_streak + ' sessions';
+        document.getElementById('stat-today').innerText = formatMinutes(stats.today_focus_mins);
+        document.getElementById('stat-total').innerText = formatMinutes(stats.total_focus_mins);
+      } catch (e) {
+        console.error("Pywebview API fails to connect", e);
+      }
+    }
+
+    function formatMinutes(mins) {
+      if (mins < 60) return mins + 'm';
+      let hrs = Math.floor(mins / 60);
+      let rm = mins % 60;
+      return hrs + 'h ' + rm + 'm';
+    }
+
+    function formatTimeMMSS(secs) {
+      let m = Math.floor(secs / 60).toString().padStart(2, '0');
+      let s = (secs % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function triggerBeep() {
+      if (appState.muted) return;
+      try {
+        pywebview.api.play_beep();
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function toggleMute() {
+      appState.muted = !appState.muted;
+      const icon = document.getElementById('speaker-icon');
+      if (appState.muted) {
+        icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
+      } else {
+        icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
+      }
+    }
+
+    // STATE FLOW ENGINE
+    function beginSession() {
+      appState.fixationSec = parseInt(document.getElementById('val-fixation').value);
+      appState.focusMin = parseInt(document.getElementById('val-focus').value);
+      appState.includeBreathing = document.getElementById('val-breathing').checked;
+      appState.breathInhaleOuthaleSec = parseInt(document.getElementById('val-inhale').value);
+      appState.breathCyclesCount = parseInt(document.getElementById('val-cycles').value);
+
+      startFixationPhase();
+    }
+
+    function startFixationPhase() {
+      changeScreen('screen-fixate');
+      fixationTimeLeft = appState.fixationSec;
+      document.getElementById('fixate-timer').innerText = formatTimeMMSS(fixationTimeLeft);
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        fixationTimeLeft--;
+        document.getElementById('fixate-timer').innerText = formatTimeMMSS(fixationTimeLeft);
+
+        if (fixationTimeLeft <= 0) {
+          clearInterval(timerInterval);
+          triggerBeep();
+          advanceFromFixation();
+        }
+      }, 1000);
+    }
+
+    function advanceFromFixation() {
+      if (appState.includeBreathing) {
+        startBreathingPhase();
+      } else {
+        startFocusPhase();
+      }
+    }
+
+    function startBreathingPhase() {
+      changeScreen('screen-breathing');
+      currentBreathCycle = 1;
+      breathPhase = 'inhale';
+      breathTimeLeft = appState.breathInhaleOuthaleSec;
+
+      // Draw breath cycle dots
+      const dotsContainer = document.getElementById('dots-container');
+      dotsContainer.innerHTML = '';
+      for (let i = 0; i < appState.breathCyclesCount; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'cycle-dot';
+        dotsContainer.appendChild(dot);
+      }
+      updateBreathingUI();
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        breathTimeLeft--;
+        document.getElementById('b-counter').innerText = breathTimeLeft;
+
+        if (breathTimeLeft <= 0) {
+          if (breathPhase === 'inhale') {
+            breathPhase = 'exhale';
+            breathTimeLeft = appState.breathInhaleOuthaleSec;
+          } else {
+            // Cycle finish
+            document.querySelectorAll('.cycle-dot')[currentBreathCycle - 1].classList.remove('active');
+            document.querySelectorAll('.cycle-dot')[currentBreathCycle - 1].classList.add('completed');
+            if (currentBreathCycle >= appState.breathCyclesCount) {
+              clearInterval(timerInterval);
+              triggerBeep();
+              startFocusPhase();
+              return;
+            }
+            currentBreathCycle++;
+            breathPhase = 'inhale';
+            breathTimeLeft = appState.breathInhaleOuthaleSec;
+          }
+          updateBreathingUI();
+        }
+      }, 1000);
+    }
+
+    function updateBreathingUI() {
+      const orb = document.getElementById('b-orb');
+      const statusText = document.getElementById('b-status');
+      
+      // Update dots indicator active class
+      document.querySelectorAll('.cycle-dot').forEach((dot, idx) => {
+        if (idx === currentBreathCycle - 1) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+        }
+      });
+
+      document.getElementById('b-counter').innerText = breathTimeLeft;
+      document.getElementById('cycle-txt').innerText = `Cycle ${currentBreathCycle} of ${appState.breathCyclesCount}`;
+
+      statusText.innerText = breathPhase.toUpperCase();
+      orb.style.transition = `transform ${appState.breathInhaleOuthaleSec}s ease-in-out`;
+
+      if (breathPhase === 'inhale') {
+        orb.style.transform = 'scale(1.0)';
+      } else {
+        orb.style.transform = 'scale(0.85)';
+      }
+    }
+
+    function startFocusPhase() {
+      changeScreen('screen-focus');
+      focusTimeLeft = appState.focusMin * 60;
+      updateFocusTimerUI();
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        focusTimeLeft--;
+        updateFocusTimerUI();
+
+        if (focusTimeLeft <= 0) {
+          clearInterval(timerInterval);
+          triggerBeep();
+          completeFocusSession();
+        }
+      }, 1000);
+    }
+
+    function updateFocusTimerUI() {
+      document.getElementById('focus-timer').innerText = formatTimeMMSS(focusTimeLeft);
+      
+      const totalSec = appState.focusMin * 60;
+      const progressFraction = focusTimeLeft / totalSec;
+      const circumference = 2 * Math.PI * 116; // 728.84
+      const offset = (1 - progressFraction) * circumference;
+      
+      document.getElementById('focus-progress-bar').style.strokeDashoffset = offset;
+    }
+
+    async function completeFocusSession() {
+      try {
+        await pywebview.api.record_session(appState.focusMin);
+        loadStats();
+      } catch (e) {
+        console.error(e);
+      }
+      stopSession();
+    }
+
+    function finishEarly() {
+      clearInterval(timerInterval);
+      triggerBeep();
+      completeFocusSession();
+    }
+
+    function skipPhase() {
+      clearInterval(timerInterval);
+      triggerBeep();
+      if (currentScreen === 'screen-fixate') {
+        advanceFromFixation();
+      } else if (currentScreen === 'screen-breathing') {
+        startFocusPhase();
+      }
+    }
+
+    function stopSession() {
+      clearInterval(timerInterval);
+      changeScreen('screen-setup');
+    }
+
+    // Default layout setup
+    document.getElementById('esc-btn').style.display = 'none';
+  </script>
+</body>
+</html>

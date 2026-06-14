@@ -1,0 +1,14 @@
+build/
+dist/
+__pycache__/
+*.spec
+Focusstats.json
+focus_stats.json
+focus-web/
+node_modules/
+.venv/
+env/
+venv/
+*.pyc
+*.pyo
+.DS_Store
